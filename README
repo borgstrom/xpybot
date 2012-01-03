@@ -1,0 +1,5 @@
+XPyBot - XMPP Python Bot Framework
+
+Classes to used for creating an XMPP bot.
+
+Requires xmpppy
