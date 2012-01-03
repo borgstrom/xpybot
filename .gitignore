@@ -1,0 +1,5 @@
+# compiled files
+*.pyc
+
+# link in examples for testing
+examples/xpybot
