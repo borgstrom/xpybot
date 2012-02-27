@@ -73,6 +73,18 @@ class XPyBot(object):
         """
         return self.send(xmpp.protocol.Message(*args, **kwargs))
 
+    def presence(self, *args, **kwargs):
+        """
+        Sends a Presence object
+        """
+        return self.send(xmpp.Presence(*args, **kwargs))
+
+    def status(self, status):
+        """
+        Send a presence status
+        """
+        return self.presence(status=status)
+
     def chat(self, *args, **kwargs):
         """
         Sends a Message object with the type preset to 'chat'
@@ -88,12 +100,7 @@ class XPyBot(object):
         return self.message(*args, **kwargs)
 
     def handle_message(self, session, message):
-        if message.getType() == 'chat':
-            self.handle_chat(message)
-        elif message.getType() == 'groupchat':
-            self.handle_groupchat(message)
-        else:
-            print message
+        pass
 
     def handle_chat(self, message):
         pass
@@ -101,14 +108,25 @@ class XPyBot(object):
     def handle_groupchat(self, message):
         pass
 
-    def handle_presence(self, session, message):
-        if message.getType() == 'subscribe':
-            self.handle_subscribe(message)
-        else:
-            print message
+    def handle_presence(self, message):
+        pass
 
     def handle_subscribe(self, message):
         pass
+
+    def presence_handler(self, session, message):
+        if message.getType() == 'subscribe':
+            self.handle_subscribe(message)
+        else:
+            self.handle_presence(message)
+
+    def message_handler(self, session, message):
+        if message.getType() == 'chat':
+            self.handle_chat(message)
+        elif message.getType() == 'groupchat':
+            self.handle_groupchat(message)
+        else:
+            self.handle_message(message)
 
     def connect(self):
         if isinstance(self.jid, basestring):
@@ -117,7 +135,6 @@ class XPyBot(object):
         if self.client is None:
             self.client = xmpp.Client(self.jid.getDomain(), debug=[])
 
-        print self.server
         self.connected = self.client.connect(self.server)
         if not self.connected:
             raise BotConnectionException("Could not connect to server")
@@ -125,8 +142,8 @@ class XPyBot(object):
             raise BotConnectionException("Connection does not use TLS")
 
         # setup handlers
-        self.client.RegisterHandler('message', self.handle_message)
-        self.client.RegisterHandler('presence', self.handle_presence)
+        self.client.RegisterHandler('message', self.message_handler)
+        self.client.RegisterHandler('presence', self.presence_handler)
 
         # authenticate
         if not self.resource:
@@ -137,6 +154,7 @@ class XPyBot(object):
 
         # set initial presence
         self.client.sendInitPresence()
+        self._status = xmpp.Presence()
 
         # fetch the roster
         self.roster = self.client.getRoster()
